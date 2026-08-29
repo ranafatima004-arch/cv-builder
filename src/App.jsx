@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
 import {
+  BriefcaseBusiness,
+  Check,
   Download,
   FileText,
   LayoutTemplate,
+  LoaderCircle,
   Plus,
   Sparkles,
   WandSparkles,
@@ -10,92 +13,40 @@ import {
 import { initialResumeData } from './data/resumeData';
 import { downloadPDF } from './utils/downloadPdf';
 
+const templates = [
+  { id: 'minimal', name: 'Minimalist', note: 'Clean & focused', accent: '#315efb' },
+  { id: 'professional', name: 'Professional', note: 'Structured & polished', accent: '#0f766e' },
+  { id: 'creative', name: 'Modern Creative', note: 'Bold & memorable', accent: '#c2410c' },
+];
+
 const Field = ({ label, value, onChange, placeholder, multiline = false, type = 'text' }) => {
   const Component = multiline ? 'textarea' : 'input';
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <Component
-        type={type}
-        value={value ?? ''}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        rows={multiline ? 4 : undefined}
-      />
-    </label>
-  );
+  return <label className="field"><span>{label}</span><Component type={type} value={value ?? ''} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} rows={multiline ? 4 : undefined} /></label>;
 };
-
-const Section = ({ icon: Icon, title, description, children }) => (
-  <section className="editor-section">
-    <div className="section-heading">
-      <div className="section-icon"><Icon size={17} /></div>
-      <div><h2>{title}</h2><p>{description}</p></div>
-    </div>
-    {children}
-  </section>
-);
+const Section = ({ icon: Icon, title, description, children }) => <section className="editor-section"><div className="section-heading"><div className="section-icon"><Icon size={17} /></div><div><h2>{title}</h2><p>{description}</p></div></div>{children}</section>;
 
 const App = () => {
   const [resumeData, setResumeData] = useState(initialResumeData);
+  const [template, setTemplate] = useState('minimal');
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
-
   const updateProfile = (field, value) => setResumeData((prev) => ({ ...prev, profile: { ...prev.profile, [field]: value } }));
   const updateItem = (section, id, field, value) => setResumeData((prev) => ({ ...prev, [section]: prev[section].map((item) => item.id === id ? { ...item, [field]: value } : item) }));
   const updateSkills = (value) => setResumeData((prev) => ({ ...prev, skills: value.split(',').map((skill) => skill.trim()).filter(Boolean) }));
-
-  const handleDownload = async () => {
-    setDownloading(true); setDownloadError('');
-    try { await downloadPDF('resume-preview', resumeData.profile.fullName); }
-    catch { setDownloadError('Could not create the PDF. Please try again.'); }
-    finally { setDownloading(false); }
-  };
-
-  const completion = useMemo(() => {
-    const fields = Object.values(resumeData.profile).filter(Boolean).length;
-    return Math.min(100, Math.round((fields / Object.keys(resumeData.profile).length) * 100));
-  }, [resumeData.profile]);
-
-  return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div className="brand"><div className="brand-mark"><FileText size={19} /></div><div><strong>folio<span>.</span></strong><small>AI CV BUILDER</small></div></div>
-        <div className="topbar-actions"><span className="saved-status"><span className="status-dot" /> All changes saved</span><button className="download-button" onClick={handleDownload} disabled={downloading}><Download size={17} />{downloading ? 'Preparing…' : 'Download PDF'}</button></div>
-      </header>
-
-      <main className="workspace">
-        <div className="intro"><div><p className="eyebrow"><Sparkles size={14} /> YOUR CAREER, ELEVATED</p><h1>Shape your next <em>opportunity.</em></h1><p className="intro-copy">Craft a CV that tells your story clearly, confidently, and beautifully.</p></div><div className="progress-card"><div className="progress-label"><span>Profile completeness</span><strong>{completion}%</strong></div><div className="progress-track"><div style={{ width: `${completion}%` }} /></div><small>Keep going — you&apos;re building something great.</small></div></div>
-
-        <div className="workspace-grid">
-          <div className="editor-column">
-            <Section icon={FileText} title="Personal information" description="The essentials recruiters need to reach you.">
-              <div className="field-grid"><Field label="Full name" value={resumeData.profile.fullName} onChange={(v) => updateProfile('fullName', v)} placeholder="Your name" /><Field label="Professional title" value={resumeData.profile.title} onChange={(v) => updateProfile('title', v)} placeholder="What do you do?" /></div>
-              <div className="field-grid"><Field label="Email address" type="email" value={resumeData.profile.email} onChange={(v) => updateProfile('email', v)} placeholder="you@email.com" /><Field label="Phone number" value={resumeData.profile.phone} onChange={(v) => updateProfile('phone', v)} placeholder="+1 234 567 890" /></div>
-              <div className="field-grid"><Field label="Location" value={resumeData.profile.location} onChange={(v) => updateProfile('location', v)} placeholder="City, Country" /><Field label="Portfolio / website" value={resumeData.profile.website} onChange={(v) => updateProfile('website', v)} placeholder="yourwebsite.com" /></div>
-              <Field label="Professional summary" multiline value={resumeData.profile.summary} onChange={(v) => updateProfile('summary', v)} placeholder="A concise introduction to your experience and strengths…" />
-            </Section>
-
-            <Section icon={LayoutTemplate} title="Work experience" description="Show the impact you&apos;ve made, not just the tasks you&apos;ve done.">
-              {resumeData.experience.map((item) => <div className="entry-card" key={item.id}><div className="entry-top"><span className="entry-number">0{item.id}</span><span className="entry-label">Experience</span></div><div className="field-grid"><Field label="Job title" value={item.role} onChange={(v) => updateItem('experience', item.id, 'role', v)} placeholder="Senior Designer" /><Field label="Company" value={item.company} onChange={(v) => updateItem('experience', item.id, 'company', v)} placeholder="Company name" /></div><div className="field-grid"><Field label="Location" value={item.location} onChange={(v) => updateItem('experience', item.id, 'location', v)} placeholder="City or Remote" /><Field label="Dates" value={`${item.startDate} - ${item.endDate}`} onChange={(v) => { const [startDate = '', endDate = ''] = v.split(' - '); updateItem('experience', item.id, 'startDate', startDate); updateItem('experience', item.id, 'endDate', endDate); }} placeholder="2021 - Present" /></div><Field label="What did you accomplish?" multiline value={item.description} onChange={(v) => updateItem('experience', item.id, 'description', v)} placeholder="Describe your impact and key achievements…" /></div>)}
-              <button className="add-button" type="button"><Plus size={16} /> Add another position</button>
-            </Section>
-
-            <Section icon={FileText} title="Education" description="Your academic background and qualifications.">
-              {resumeData.education.map((item) => <div className="entry-card" key={item.id}><div className="field-grid"><Field label="School / university" value={item.school} onChange={(v) => updateItem('education', item.id, 'school', v)} placeholder="University name" /><Field label="Degree / qualification" value={item.degree} onChange={(v) => updateItem('education', item.id, 'degree', v)} placeholder="B.A. in Design" /></div><div className="field-grid"><Field label="Location" value={item.location} onChange={(v) => updateItem('education', item.id, 'location', v)} placeholder="City, Country" /><Field label="Dates" value={`${item.startDate} - ${item.endDate}`} onChange={(v) => { const [startDate = '', endDate = ''] = v.split(' - '); updateItem('education', item.id, 'startDate', startDate); updateItem('education', item.id, 'endDate', endDate); }} placeholder="2015 - 2019" /></div></div>)}
-            </Section>
-
-            <Section icon={WandSparkles} title="Skills & projects" description="Add the keywords and work that make you memorable."><Field label="Skills" value={resumeData.skills.join(', ')} onChange={updateSkills} placeholder="UX Strategy, Figma, Research" /><div className="skills-preview">{resumeData.skills.map((skill) => <span key={skill}>{skill}</span>)}</div>{resumeData.projects.map((project) => <div className="entry-card" key={project.id}><div className="field-grid"><Field label="Project name" value={project.name} onChange={(v) => updateItem('projects', project.id, 'name', v)} placeholder="Featured project" /><Field label="Project link" value={project.link} onChange={(v) => updateItem('projects', project.id, 'link', v)} placeholder="project.com" /></div><Field label="Project description" multiline value={project.description} onChange={(v) => updateItem('projects', project.id, 'description', v)} placeholder="What did you build?" /></div>)}</Section>
-          </div>
-
-          <aside className="preview-column"><div className="preview-header"><div><p className="eyebrow"><Sparkles size={13} /> LIVE PREVIEW</p><h2>Your CV, in real time</h2></div><span className="a4-badge">A4</span></div>{downloadError && <p className="download-error" role="alert">{downloadError}</p>}<ResumePreview data={resumeData} /></aside>
-        </div>
-      </main>
-    </div>
-  );
+  const handleDownload = async () => { setDownloading(true); setDownloadError(''); try { await downloadPDF('resume-preview', resumeData.profile.fullName); } catch { setDownloadError('Could not create the PDF. Please try again.'); } finally { setDownloading(false); } };
+  const completion = useMemo(() => { const fields = Object.values(resumeData.profile).filter(Boolean).length; return Math.min(100, Math.round((fields / Object.keys(resumeData.profile).length) * 100)); }, [resumeData.profile]);
+  return <div className="app-shell">
+    <header className="topbar"><div className="brand"><div className="brand-mark"><Sparkles size={19} /></div><div><strong>CV Craft <span>AI</span></strong><small>SMART RESUME BUILDER</small></div></div><div className="topbar-actions"><span className="saved-status"><span className="status-dot" /> All changes saved</span><button className="download-button" onClick={handleDownload} disabled={downloading}>{downloading ? <LoaderCircle className="spin" size={17} /> : <Download size={17} />}{downloading ? 'Preparing PDF…' : 'Download PDF'}</button></div></header>
+    <main className="workspace"><div className="intro"><div><p className="eyebrow"><Sparkles size={14} /> YOUR CAREER, ELEVATED</p><h1>Shape your next <em>opportunity.</em></h1><p className="intro-copy">Craft a CV that tells your story clearly, confidently, and beautifully.</p></div><div className="progress-card"><div className="progress-label"><span>Profile completeness</span><strong>{completion}%</strong></div><div className="progress-track"><div style={{ width: `${completion}%` }} /></div><small>Keep going — you&apos;re building something great.</small></div></div>
+      <div className="workspace-grid"><div className="editor-column">
+        <Section icon={FileText} title="Personal information" description="The essentials recruiters need to reach you."><div className="field-grid"><Field label="Full name" value={resumeData.profile.fullName} onChange={(v) => updateProfile('fullName', v)} placeholder="Your name" /><Field label="Professional title" value={resumeData.profile.title} onChange={(v) => updateProfile('title', v)} placeholder="What do you do?" /></div><div className="field-grid"><Field label="Email address" type="email" value={resumeData.profile.email} onChange={(v) => updateProfile('email', v)} placeholder="you@email.com" /><Field label="Phone number" value={resumeData.profile.phone} onChange={(v) => updateProfile('phone', v)} placeholder="+1 234 567 890" /></div><div className="field-grid"><Field label="Location" value={resumeData.profile.location} onChange={(v) => updateProfile('location', v)} placeholder="City, Country" /><Field label="Portfolio / website" value={resumeData.profile.website} onChange={(v) => updateProfile('website', v)} placeholder="yourwebsite.com" /></div><Field label="Professional summary" multiline value={resumeData.profile.summary} onChange={(v) => updateProfile('summary', v)} placeholder="A concise introduction to your experience and strengths…" /></Section>
+        <Section icon={BriefcaseBusiness} title="Work experience" description="Show the impact you&apos;ve made, not just the tasks you&apos;ve done.">{resumeData.experience.map((item) => <div className="entry-card" key={item.id}><div className="entry-top"><span className="entry-number">0{item.id}</span><span className="entry-label">Experience</span></div><div className="field-grid"><Field label="Job title" value={item.role} onChange={(v) => updateItem('experience', item.id, 'role', v)} placeholder="Senior Designer" /><Field label="Company" value={item.company} onChange={(v) => updateItem('experience', item.id, 'company', v)} placeholder="Company name" /></div><div className="field-grid"><Field label="Location" value={item.location} onChange={(v) => updateItem('experience', item.id, 'location', v)} placeholder="City or Remote" /><Field label="Dates" value={`${item.startDate} - ${item.endDate}`} onChange={(v) => { const [startDate = '', endDate = ''] = v.split(' - '); updateItem('experience', item.id, 'startDate', startDate); updateItem('experience', item.id, 'endDate', endDate); }} placeholder="2021 - Present" /></div><Field label="What did you accomplish?" multiline value={item.description} onChange={(v) => updateItem('experience', item.id, 'description', v)} placeholder="Describe your impact and key achievements…" /></div>)}<button className="add-button" type="button"><Plus size={16} /> Add another position</button></Section>
+        <Section icon={LayoutTemplate} title="Education" description="Your academic background and qualifications.">{resumeData.education.map((item) => <div className="entry-card" key={item.id}><div className="field-grid"><Field label="School / university" value={item.school} onChange={(v) => updateItem('education', item.id, 'school', v)} placeholder="University name" /><Field label="Degree / qualification" value={item.degree} onChange={(v) => updateItem('education', item.id, 'degree', v)} placeholder="B.A. in Design" /></div><div className="field-grid"><Field label="Location" value={item.location} onChange={(v) => updateItem('education', item.id, 'location', v)} placeholder="City, Country" /><Field label="Dates" value={`${item.startDate} - ${item.endDate}`} onChange={(v) => { const [startDate = '', endDate = ''] = v.split(' - '); updateItem('education', item.id, 'startDate', startDate); updateItem('education', item.id, 'endDate', endDate); }} placeholder="2015 - 2019" /></div></div>)}</Section>
+        <Section icon={WandSparkles} title="Skills & projects" description="Add the keywords and work that make you memorable."><Field label="Skills" value={resumeData.skills.join(', ')} onChange={updateSkills} placeholder="UX Strategy, Figma, Research" /><div className="skills-preview">{resumeData.skills.map((skill) => <span key={skill}>{skill}</span>)}</div>{resumeData.projects.map((project) => <div className="entry-card" key={project.id}><div className="field-grid"><Field label="Project name" value={project.name} onChange={(v) => updateItem('projects', project.id, 'name', v)} placeholder="Featured project" /><Field label="Project link" value={project.link} onChange={(v) => updateItem('projects', project.id, 'link', v)} placeholder="project.com" /></div><Field label="Project description" multiline value={project.description} onChange={(v) => updateItem('projects', project.id, 'description', v)} placeholder="What did you build?" /></div>)}</Section>
+      </div><aside className="preview-column"><div className="preview-header"><div><p className="eyebrow"><Sparkles size={13} /> LIVE PREVIEW</p><h2>Your CV, in real time</h2></div><span className="a4-badge">A4 · MULTI-PAGE</span></div><div className="template-picker"><div><span className="picker-label">Choose a template</span><p>Switch styles without losing your content.</p></div><div className="template-options">{templates.map((item) => <button className={`template-option ${template === item.id ? 'selected' : ''}`} key={item.id} onClick={() => setTemplate(item.id)}><span className="template-swatch" style={{ background: item.accent }} /> <span><strong>{item.name}</strong><small>{item.note}</small></span>{template === item.id && <Check size={15} />}</button>)}</div></div>{downloadError && <p className="download-error" role="alert">{downloadError}</p>}<ResumePreview data={resumeData} template={template} /></aside></div>
+    </main></div>;
 };
 
-const ResumePreview = ({ data }) => <div id="resume-preview" className="resume-paper"><div className="resume-head"><div><h2>{data.profile.fullName}</h2><p>{data.profile.title}</p></div><div className="resume-contact"><span>{data.profile.email}</span><span>{data.profile.phone}</span><span>{data.profile.location}</span>{data.profile.website && <span>{data.profile.website}</span>}</div></div><div className="resume-rule" />{data.profile.summary && <ResumeBlock title="Profile"><p className="resume-summary">{data.profile.summary}</p></ResumeBlock>}<ResumeBlock title="Experience">{data.experience.map((item) => <div className="resume-entry" key={item.id}><div className="resume-entry-title"><strong>{item.role}</strong><span>{item.startDate} — {item.endDate}</span></div><div className="resume-entry-meta">{item.company}{item.location ? ` · ${item.location}` : ''}</div><p>{item.description}</p></div>)}</ResumeBlock><ResumeBlock title="Education">{data.education.map((item) => <div className="resume-entry" key={item.id}><div className="resume-entry-title"><strong>{item.degree}</strong><span>{item.startDate} — {item.endDate}</span></div><div className="resume-entry-meta">{item.school}{item.location ? ` · ${item.location}` : ''}</div></div>)}</ResumeBlock><ResumeBlock title="Skills"><div className="resume-skills">{data.skills.map((skill) => <span key={skill}>{skill}</span>)}</div></ResumeBlock>{data.projects.length > 0 && <ResumeBlock title="Selected project">{data.projects.map((project) => <div className="resume-entry" key={project.id}><div className="resume-entry-title"><strong>{project.name}</strong>{project.link && <span>{project.link}</span>}</div><p>{project.description}</p></div>)}</ResumeBlock>}</div>;
-const ResumeBlock = ({ title, children }) => <section className="resume-block"><h3>{title}</h3>{children}</section>;
-
+const ResumePreview = ({ data, template }) => <div id="resume-preview" className={`resume-paper template-${template}`}><div className="resume-head"><div><h2>{data.profile.fullName}</h2><p>{data.profile.title}</p></div><div className="resume-contact"><span>{data.profile.email}</span><span>{data.profile.phone}</span><span>{data.profile.location}</span>{data.profile.website && <span>{data.profile.website}</span>}</div></div><div className="resume-rule" />{data.profile.summary && <ResumeBlock title="Profile"><p className="resume-summary">{data.profile.summary}</p></ResumeBlock>}<ResumeBlock title="Experience">{data.experience.map((item) => <div className="resume-entry" key={item.id}><div className="resume-entry-title"><strong>{item.role}</strong><span>{item.startDate} — {item.endDate}</span></div><div className="resume-entry-meta">{item.company}{item.location ? ` · ${item.location}` : ''}</div><p>{item.description}</p></div>)}</ResumeBlock><ResumeBlock title="Education">{data.education.map((item) => <div className="resume-entry" key={item.id}><div className="resume-entry-title"><strong>{item.degree}</strong><span>{item.startDate} — {item.endDate}</span></div><div className="resume-entry-meta">{item.school}{item.location ? ` · ${item.location}` : ''}</div></div>)}</ResumeBlock><ResumeBlock title="Skills"><div className="resume-skills">{data.skills.map((skill) => <span key={skill}>{skill}</span>)}</div></ResumeBlock>{data.projects.length > 0 && <ResumeBlock title="Selected projects">{data.projects.map((project) => <div className="resume-entry" key={project.id}><div className="resume-entry-title"><strong>{project.name}</strong>{project.link && <span>{project.link}</span>}</div><p>{project.description}</p></div>)}</ResumeBlock>}</div>;
+const ResumeBlock = ({ title, children }) => <section className="resume-block"> <h3>{title}</h3>{children}</section>;
 export default App;
