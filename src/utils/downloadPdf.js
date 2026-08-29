@@ -11,28 +11,43 @@ export const downloadPDF = async (elementId, fileName = 'resume') => {
 
   await waitForFonts();
   const safeName = fileName.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'resume';
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: '#ffffff',
-    logging: false,
-    scrollX: 0,
-    scrollY: 0,
-    width: element.scrollWidth,
-    height: element.scrollHeight,
-    windowWidth: Math.max(element.scrollWidth, document.documentElement.clientWidth),
-    windowHeight: Math.max(element.scrollHeight, document.documentElement.clientHeight),
+  const exportRoot = element.cloneNode(true);
+  exportRoot.id = `${elementId}-export`;
+  exportRoot.style.cssText = `${element.style.cssText}; position: absolute; left: -100000px; top: 0; width: ${element.getBoundingClientRect().width}px; height: auto; min-height: 0; max-height: none; overflow: visible; box-sizing: border-box; padding: 24px 28px; background: #ffffff;`;
+  exportRoot.querySelectorAll('*').forEach((node) => {
+    node.style.maxHeight = 'none';
+    node.style.height = 'auto';
+    node.style.overflow = 'visible';
+    node.style.breakInside = 'avoid';
+    node.style.pageBreakInside = 'avoid';
   });
+  document.body.appendChild(exportRoot);
 
-  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
-  const margin = 10;
-  const pageWidth = 210;
-  const pageHeight = 297;
-  const contentWidth = pageWidth - margin * 2;
-  const contentHeight = pageHeight - margin * 2;
-  const pxPerMm = canvas.width / contentWidth;
-  const pageCanvasHeight = Math.floor(contentHeight * pxPerMm);
-  const pageCount = Math.ceil(canvas.height / pageCanvasHeight);
+  try {
+    const exportWidth = exportRoot.scrollWidth;
+    const exportHeight = exportRoot.scrollHeight;
+    const canvas = await html2canvas(exportRoot, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      width: exportWidth,
+      height: exportHeight,
+      windowWidth: exportWidth,
+      windowHeight: exportHeight,
+    });
+
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+    const margin = 12;
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const contentWidth = pageWidth - margin * 2;
+    const contentHeight = pageHeight - margin * 2;
+    const pxPerMm = canvas.width / contentWidth;
+    const pageCanvasHeight = Math.floor((contentHeight - 4) * pxPerMm);
+    const pageCount = Math.max(1, Math.ceil(canvas.height / pageCanvasHeight));
 
   for (let page = 0; page < pageCount; page += 1) {
     if (page > 0) pdf.addPage();
@@ -46,5 +61,8 @@ export const downloadPDF = async (elementId, fileName = 'resume') => {
     pdf.addImage(slice.toDataURL('image/jpeg', 0.98), 'JPEG', margin, margin, contentWidth, renderedHeight, undefined, 'FAST');
   }
 
-  pdf.save(`${safeName}.pdf`);
+    pdf.save(`${safeName}.pdf`);
+  } finally {
+    exportRoot.remove();
+  }
 };
