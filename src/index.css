@@ -109,4 +109,20 @@ button:disabled { cursor: wait; opacity: .75; }
 
 @media (max-width: 900px) { .workspace { width: min(680px, calc(100% - 32px)); padding-top: 34px; } .intro { align-items: stretch; flex-direction: column; gap: 24px; margin-bottom: 30px; } .progress-card { width: 100%; } .workspace-grid { grid-template-columns: 1fr; gap: 35px; } .preview-column { position: static; } .resume-paper { min-height: auto; } }
 @media (max-width: 560px) { .template-picker { align-items: stretch; flex-direction: column; } .template-options { justify-content: flex-start; } .template-option { flex: 1 1 30%; } .topbar { height: auto; min-height: 70px; padding: 14px 16px; } .saved-status { display: none; } .download-button { padding: 10px 12px; font-size: 11px; } .workspace { width: calc(100% - 24px); padding-bottom: 40px; } .intro h1 { font-size: 37px; } .editor-section { padding: 21px 17px; } .field-grid { grid-template-columns: 1fr; gap: 0; } .resume-paper { padding: 30px 25px; } .resume-head { flex-direction: column; gap: 14px; } .resume-contact { align-items: flex-start; text-align: left; } .resume-head h2 { font-size: 26px; } }
-@media print { .resume-paper { box-shadow: none; } }
+@page { size: A4 portrait; margin: 0; }
+@media print {
+  html, body { width: 210mm; min-width: 0; margin: 0; background: #fff; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body > #root { width: 210mm; }
+  .app-shell { min-height: 0; background: #fff; }
+  .topbar, .intro, .editor-column, .preview-header, .template-picker, .download-error { display: none !important; }
+  .workspace, .workspace-grid, .preview-column { display: block; width: auto; margin: 0; padding: 0; }
+  .preview-column { position: static; }
+  #resume-preview { display: block !important; width: 210mm; min-height: 0; height: auto !important; max-height: none !important; overflow: visible !important; padding: 16mm 17mm !important; border: 0; border-radius: 0; box-shadow: none; background: #fff; }
+  #resume-preview, #resume-preview * { box-sizing: border-box; }
+  #resume-preview .resume-head, #resume-preview .resume-rule, #resume-preview .resume-block, #resume-preview .resume-entry { max-width: none; overflow: visible; }
+  #resume-preview .resume-block { break-inside: avoid; page-break-inside: avoid; }
+  #resume-preview .resume-entry { break-inside: avoid; page-break-inside: avoid; }
+  #resume-preview p, #resume-preview span, #resume-preview strong { overflow-wrap: anywhere; }
+  #resume-preview .resume-entry p, #resume-preview .resume-summary { height: auto; max-height: none; }
+}
