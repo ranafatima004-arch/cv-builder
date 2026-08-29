@@ -77,7 +77,11 @@ button:disabled { cursor: wait; opacity: .75; }
 .template-option small { margin-top: 2px; color: #8992a5; font-size: 8px; }
 .template-swatch { width: 9px; height: 22px; border-radius: 3px; }
 .resume-block, .resume-entry { break-inside: avoid; page-break-inside: avoid; }
-.resume-paper { overflow: visible; }
+.resume-paper { overflow: visible; height: auto; max-height: none; }
+#resume-preview, #resume-preview * { max-height: none; }
+#resume-preview { min-height: 0; height: auto; overflow: visible; }
+#resume-preview .resume-block, #resume-preview .resume-entry { break-inside: avoid; page-break-inside: avoid; }
+#resume-preview .resume-summary, #resume-preview .resume-entry p { overflow: visible; height: auto; max-height: none; }
 .template-professional .resume-rule { background: #0f766e; }
 .template-professional .resume-head p, .template-professional .resume-block h3, .template-professional .resume-entry-meta { color: #0f766e; }
 .template-professional .resume-head h2 { letter-spacing: -.03em; }
