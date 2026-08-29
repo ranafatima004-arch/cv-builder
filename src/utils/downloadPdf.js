@@ -1,24 +1,15 @@
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2pdf from 'html2pdf.js';
 
-export const downloadPDF = async (elementId) => {
-  const input = document.getElementById(elementId);
+export const downloadPDF = async (elementId, fileName = 'resume') => {
+  const element = document.getElementById(elementId);
+  if (!element) throw new Error('Resume preview not found');
 
-  if (!input) {
-    return;
-  }
-
-  const canvas = await html2canvas(input, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: '#ffffff',
-  });
-
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-  pdf.save('resume.pdf');
+  await html2pdf().set({
+    margin: [8, 8, 8, 8],
+    filename: `${fileName.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'resume'}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] },
+  }).from(element).save();
 };
