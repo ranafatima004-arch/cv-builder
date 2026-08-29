@@ -14,8 +14,8 @@ import { initialResumeData } from './data/resumeData';
 import { downloadPDF } from './utils/downloadPdf';
 
 const templates = [
-  { id: 'minimal', name: 'Minimalist', note: 'Clean & focused', accent: '#315efb' },
-  { id: 'professional', name: 'Professional', note: 'Structured & polished', accent: '#0f766e' },
+  { id: 'minimal', name: 'Minimalist', note: 'Clean & focused', accent: '#118AB2' },
+  { id: 'professional', name: 'Professional', note: 'Structured & polished', accent: '#7CD5C4' },
   { id: 'creative', name: 'Modern Creative', note: 'Bold & memorable', accent: '#c2410c' },
 ];
 
