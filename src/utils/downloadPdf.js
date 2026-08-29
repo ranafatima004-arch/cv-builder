@@ -1,24 +1,35 @@
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2pdf from 'html2pdf.js'
 
-export const downloadPDF = async (elementId) => {
-  const input = document.getElementById(elementId);
+const waitForFonts = async () => {
+  if (document.fonts?.ready) await document.fonts.ready
+}
 
-  if (!input) {
-    return;
+export async function downloadPDF(elementId, fileName = 'resume') {
+  const element = document.getElementById(elementId)
+  if (!element) throw new Error('Resume preview is not available yet.')
+
+  await waitForFonts()
+  const safeName = fileName.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'resume'
+  const options = {
+    margin: [10, 10, 10, 10],
+    filename: `${safeName}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+    pagebreak: { mode: ['css', 'legacy'] },
   }
 
-  const canvas = await html2canvas(input, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: '#ffffff',
-  });
+  await html2pdf().set(options).from(element).save()
+}
 
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-  pdf.save('resume.pdf');
-};
+export const printResume = downloadPDF
